@@ -47,14 +47,14 @@ void Application::Display(void)
 	m_pModel->PlaySequence();
 
 	//Get a timer
-	static float fTimer = 0;	//store the new timer
-	static uint uClock = m_pSystem->GenClock(); //generate a new clock for that timer
-	fTimer += m_pSystem->GetDeltaTime(uClock); //get the delta time for that timer
+	static float fTimer = 0;						//Store the new timer
+	static uint uClock = m_pSystem->GenClock();		//Generate a new clock for that timer
+	fTimer += m_pSystem->GetDeltaTime(uClock);		//Get the delta time for that timer
 
-	//calculate the current position
+	//Calculate the current position
 	vector3 v3CurrentPos;
 	
-	//your code goes here
+	//Your code goes here
 	v3CurrentPos = vector3(0.0f, 0.0f, 0.0f);
 
 	vector3 v3Start;
