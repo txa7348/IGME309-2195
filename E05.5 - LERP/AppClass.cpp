@@ -54,17 +54,36 @@ void Application::Display(void)
 	//calculate the current position
 	vector3 v3CurrentPos;
 	
-
-
-
-
 	//your code goes here
 	v3CurrentPos = vector3(0.0f, 0.0f, 0.0f);
-	//-------------------
+
+	vector3 v3Start;
+	vector3 v3End;
+	static uint route = 0;
+
+	if (route < m_stopsList.size() - 1) //Mesh moves from stop to stop
+	{
+		v3Start = m_stopsList[route];
+		v3End = m_stopsList[route + 1];
+	}
+	else //Mesh moves to the original stop
+	{
+		v3Start = m_stopsList[m_stopsList.size() - 1];
+		v3End = m_stopsList[0];
+	}
+
+	float fPercentage = static_cast<float>(MapValue(fTimer, 0.0f, 2.0f, 0.0f, 1.0f)); //Distance traveled between stops
+
+	v3CurrentPos = glm::lerp(v3Start, v3End, fPercentage);
+
+	if (fPercentage >= 1.0f) //Moves destination when stop is passed
+	{
+		route++;
+		fTimer = m_pSystem->GetDeltaTime(uClock);
+		route %= m_stopsList.size();
+	}
 	
 
-
-	
 	matrix4 m4Model = glm::translate(v3CurrentPos);
 	m_pModel->SetModelMatrix(m4Model);
 
