@@ -1,4 +1,37 @@
 #include "MyMesh.h"
+void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Color)
+{
+	Release();
+	Init();
+
+	if (a_fRadius < 0.01f)
+		a_fRadius = 0.01f;
+
+	if (a_nSubdivisions < 3)
+		a_nSubdivisions = 3;
+	if (a_nSubdivisions > 360)
+		a_nSubdivisions = 360;
+
+	/*
+		Calculate a_nSubdivisions number of points around a center point in a radial manner
+		then call the AddTri function to generate a_nSubdivision number of faces
+	*/
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		float angle1 = 2 * PI * (i / (float)a_nSubdivisions);
+		float angle2 = 2 * PI * ((i + 1) / (float)a_nSubdivisions);
+
+		vector3 point0(0.0f, 0.0f, 0.0f); //Center Point
+		vector3 point1(a_fRadius * cos(angle1), a_fRadius * sin(angle1), 0.0f); //Second Point (Counterclockwise)
+		vector3 point2(a_fRadius * cos(angle2), a_fRadius * sin(angle2), 0.0f); //Third Point (Counterclockwise)
+		AddTri(point0, point1, point2);
+	}
+
+	// Adding information about color
+	CompleteMesh(a_v3Color);
+	CompileOpenGL3X();
+}
 void MyMesh::Init(void)
 {
 	m_bBinded = false;
@@ -105,7 +138,7 @@ void MyMesh::CompileOpenGL3X(void)
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);//Bind the VBO
 	glBufferData(GL_ARRAY_BUFFER, m_uVertexCount * 2 * sizeof(vector3), &m_lVertex[0], GL_STATIC_DRAW);//Generate space for the VBO
 
-	// Position attribute
+																									   // Position attribute
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(vector3), (GLvoid*)0);
 
@@ -121,7 +154,7 @@ void MyMesh::Render(matrix4 a_mProjection, matrix4 a_mView, matrix4 a_mModel)
 {
 	// Use the buffer and shader
 	GLuint nShader = m_pShaderMngr->GetShaderID("Basic");
-	glUseProgram(nShader); 
+	glUseProgram(nShader);
 
 	//Bind the VAO of this object
 	glBindVertexArray(m_VAO);
@@ -133,11 +166,11 @@ void MyMesh::Render(matrix4 a_mProjection, matrix4 a_mView, matrix4 a_mModel)
 	//Final Projection of the Camera
 	matrix4 m4MVP = a_mProjection * a_mView * a_mModel;
 	glUniformMatrix4fv(MVP, 1, GL_FALSE, glm::value_ptr(m4MVP));
-	
+
 	//Solid
 	glUniform3f(wire, -1.0f, -1.0f, -1.0f);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDrawArrays(GL_TRIANGLES, 0, m_uVertexCount);  
+	glDrawArrays(GL_TRIANGLES, 0, m_uVertexCount);
 
 	//Wire
 	glUniform3f(wire, 1.0f, 0.0f, 1.0f);
@@ -186,17 +219,17 @@ void MyMesh::GenerateCube(float a_fSize, vector3 a_v3Color)
 	//|  |
 	//0--1
 
-	vector3 point0(-fValue,-fValue, fValue); //0
-	vector3 point1( fValue,-fValue, fValue); //1
-	vector3 point2( fValue, fValue, fValue); //2
+	vector3 point0(-fValue, -fValue, fValue); //0
+	vector3 point1(fValue, -fValue, fValue); //1
+	vector3 point2(fValue, fValue, fValue); //2
 	vector3 point3(-fValue, fValue, fValue); //3
 
-	vector3 point4(-fValue,-fValue,-fValue); //4
-	vector3 point5( fValue,-fValue,-fValue); //5
-	vector3 point6( fValue, fValue,-fValue); //6
-	vector3 point7(-fValue, fValue,-fValue); //7
+	vector3 point4(-fValue, -fValue, -fValue); //4
+	vector3 point5(fValue, -fValue, -fValue); //5
+	vector3 point6(fValue, fValue, -fValue); //6
+	vector3 point7(-fValue, fValue, -fValue); //7
 
-	//F
+											  //F
 	AddQuad(point0, point1, point3, point2);
 
 	//B
@@ -237,7 +270,7 @@ void MyMesh::GenerateCuboid(vector3 a_v3Dimensions, vector3 a_v3Color)
 	vector3 point6(v3Value.x, v3Value.y, -v3Value.z); //6
 	vector3 point7(-v3Value.x, v3Value.y, -v3Value.z); //7
 
-	//F
+													   //F
 	AddQuad(point0, point1, point3, point2);
 
 	//B
@@ -259,6 +292,7 @@ void MyMesh::GenerateCuboid(vector3 a_v3Dimensions, vector3 a_v3Color)
 	CompleteMesh(a_v3Color);
 	CompileOpenGL3X();
 }
+
 void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions, vector3 a_v3Color)
 {
 	if (a_fRadius < 0.01f)
@@ -276,26 +310,11 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Init();
 
 	// Replace this with your code
-
-	//0
-	//| \
-	//1--2
-	//| /
-	//3
-
-	for (int i = 0; i < a_nSubdivisions; i++)
-	{
-		float angle1 = 2 * PI * (i / (float)a_nSubdivisions);
-		float angle2 = 2 * PI * ((i + 1) / (float)a_nSubdivisions);
-
-		vector3 point0(0.0f, a_fHeight / 2, 0.0f); //0
-		vector3 point1(a_fRadius * cos(angle1), -a_fHeight / 2, a_fRadius * sin(angle1)); //1
-		vector3 point2(a_fRadius * cos(angle2), -a_fHeight / 2, a_fRadius * sin(angle2)); //2
-		vector3 point3(0.0f, -a_fHeight / 2, 0.0f); //3
-		AddTri(point0, point2, point1);
-		AddTri(point1, point2, point3);
-	}
-
+	Mesh* pMesh = new Mesh();
+	pMesh->GenerateCone(a_fRadius, a_fHeight, a_nSubdivisions, a_v3Color);
+	m_lVertexPos = pMesh->GetVertexList();
+	m_uVertexCount = m_lVertexPos.size();
+	SafeDelete(pMesh);
 	// -------------------------------
 
 	// Adding information about color
@@ -318,32 +337,12 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Release();
 	Init();
 
-	// Replace this with your code	
-
-	//0
-	//| \
-	//1--2
-	//|  |
-	//3--4
-	//| /
-	//5
-
-	for (int i = 0; i < a_nSubdivisions; i++)
-	{
-		float angle1 = 2 * PI * (i / (float)a_nSubdivisions);
-		float angle2 = 2 * PI * ((i + 1) / (float)a_nSubdivisions);
-
-		vector3 point0(0.0f, a_fHeight / 2, 0.0f); //0
-		vector3 point1(a_fRadius * cos(angle1), a_fHeight / 2, a_fRadius * sin(angle1)); //1
-		vector3 point2(a_fRadius * cos(angle2), a_fHeight / 2, a_fRadius * sin(angle2)); //2
-		vector3 point3(a_fRadius * cos(angle1), -a_fHeight / 2, a_fRadius * sin(angle1)); //3
-		vector3 point4(a_fRadius * cos(angle2), -a_fHeight / 2, a_fRadius * sin(angle2)); //4
-		vector3 point5(0.0f, -a_fHeight / 2, 0.0f); //5
-		AddTri(point0, point2, point1);
-		AddQuad(point1, point2, point3, point4);
-		AddTri(point3, point4, point5);
-	}
-
+	// Replace this with your code
+	Mesh* pMesh = new Mesh();
+	pMesh->GenerateCylinder(a_fRadius, a_fHeight, a_nSubdivisions, a_v3Color);
+	m_lVertexPos = pMesh->GetVertexList();
+	m_uVertexCount = m_lVertexPos.size();
+	SafeDelete(pMesh);
 	// -------------------------------
 
 	// Adding information about color
@@ -373,41 +372,11 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Init();
 
 	// Replace this with your code
-	
-	//  0--1
-	// /    \
-	//2------3
-	//|      |
-	//4------5
-	// \    /
-	//  6--7
-	//  |  |
-	//  0--1
-
-	for (int i = 0; i < a_nSubdivisions; i++)
-	{
-		float angle1 = 2 * PI * (i / (float)a_nSubdivisions);
-		float angle2 = 2 * PI * ((i + 1) / (float)a_nSubdivisions);
-
-		vector3 point0(a_fInnerRadius * cos(angle1), a_fHeight / 2, a_fInnerRadius * sin(angle1)); //0
-		vector3 point1(a_fInnerRadius * cos(angle2), a_fHeight / 2, a_fInnerRadius * sin(angle2)); //1
-
-		vector3 point2(a_fOuterRadius * cos(angle1), a_fHeight / 2, a_fOuterRadius * sin(angle1)); //2
-		vector3 point3(a_fOuterRadius * cos(angle2), a_fHeight / 2, a_fOuterRadius * sin(angle2)); //3
-
-		vector3 point4(a_fOuterRadius * cos(angle1), -a_fHeight / 2, a_fOuterRadius * sin(angle1)); //4
-		vector3 point5(a_fOuterRadius * cos(angle2), -a_fHeight / 2, a_fOuterRadius * sin(angle2)); //5
-
-		vector3 point6(a_fInnerRadius * cos(angle1), -a_fHeight / 2, a_fInnerRadius * sin(angle1)); //6
-		vector3 point7(a_fInnerRadius * cos(angle2), -a_fHeight / 2, a_fInnerRadius * sin(angle2)); //7
-
-		AddQuad(point0, point1, point2, point3);
-		AddQuad(point2, point3, point4, point5);
-		AddQuad(point4, point5, point6, point7);
-		AddQuad(point6, point7, point0, point1);
-		
-	}
-
+	Mesh* pMesh = new Mesh();
+	pMesh->GenerateTube(a_fOuterRadius, a_fInnerRadius, a_fHeight, a_nSubdivisions, a_v3Color);
+	m_lVertexPos = pMesh->GetVertexList();
+	m_uVertexCount = m_lVertexPos.size();
+	SafeDelete(pMesh);
 	// -------------------------------
 
 	// Adding information about color
@@ -439,62 +408,11 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	Init();
 
 	// Replace this with your code
-
-	//0--1
-	//|  |
-	//?--?
-	//|  |
-	//n0-n1
-	//|  |
-	//?--?
-	//|  |
-	//0--1
-	
-	float fAvgRadius = (a_fOuterRadius + a_fInnerRadius) / 2;
-	float fRingRadius = (a_fOuterRadius - a_fInnerRadius) / 2;
-
-	for (int i = 0; i < a_nSubdivisionsA; i++) //Horizontal Subdivisions
-	{
-		float angle1 = 2 * PI * (i / (float)a_nSubdivisionsA);
-		float angle2 = 2 * PI * ((i + 1) / (float)a_nSubdivisionsA);
-
-		for (int j = 0; j < a_nSubdivisionsB; j++) //Vertical Subdivisions
-		{
-			float fY1 = fRingRadius - (j / (float)a_nSubdivisionsB) * fRingRadius * 2;
-			float fY2 = fRingRadius - ((j + 1) / (float)a_nSubdivisionsB) * fRingRadius * 2;
-
-			float fRadius1 = sqrt((fRingRadius * fRingRadius) - (fY1 * fY1));
-			float fRadius2 = sqrt((fRingRadius * fRingRadius) - (fY2 * fY2));
-
-			//Outer Edge
-
-			//0--1
-			//|  |
-			//2--3
-
-			vector3 point0((fAvgRadius + fRadius1) * cos(angle1), fY1, (fAvgRadius + fRadius1) * sin(angle1)); //0
-			vector3 point1((fAvgRadius + fRadius1) * cos(angle2), fY1, (fAvgRadius + fRadius1) * sin(angle2)); //1
-			vector3 point2((fAvgRadius + fRadius2) * cos(angle1), fY2, (fAvgRadius + fRadius2) * sin(angle1)); //2
-			vector3 point3((fAvgRadius + fRadius2) * cos(angle2), fY2, (fAvgRadius + fRadius2) * sin(angle2)); //3
-
-			AddQuad(point0, point1, point2, point3);
-
-			//Inner Edge
-
-			//4--5
-			//|  |
-			//6--7
-
-			vector3 point4((fAvgRadius - fRadius1) * cos(angle1), fY1, (fAvgRadius - fRadius1) * sin(angle1)); //4
-			vector3 point5((fAvgRadius - fRadius1) * cos(angle2), fY1, (fAvgRadius - fRadius1) * sin(angle2)); //5
-			vector3 point6((fAvgRadius - fRadius2) * cos(angle1), fY2, (fAvgRadius - fRadius2) * sin(angle1)); //6
-			vector3 point7((fAvgRadius - fRadius2) * cos(angle2), fY2, (fAvgRadius - fRadius2) * sin(angle2)); //7
-
-			AddQuad(point6, point7, point4, point5);
-		}
-
-	}
-
+	Mesh* pMesh = new Mesh();
+	pMesh->GenerateTorus(a_fOuterRadius, a_fInnerRadius, a_nSubdivisionsA, a_nSubdivisionsB, a_v3Color);
+	m_lVertexPos = pMesh->GetVertexList();
+	m_uVertexCount = m_lVertexPos.size();
+	SafeDelete(pMesh);
 	// -------------------------------
 
 	// Adding information about color
@@ -507,84 +425,23 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 		a_fRadius = 0.01f;
 
 	//Sets minimum and maximum of subdivisions
-	if (a_nSubdivisions < 3)
+	if (a_nSubdivisions < 1)
 	{
 		GenerateCube(a_fRadius * 2.0f, a_v3Color);
 		return;
 	}
-	if (a_nSubdivisions > 360)
-		a_nSubdivisions = 360;
+	if (a_nSubdivisions > 6)
+		a_nSubdivisions = 6;
 
 	Release();
 	Init();
 
 	// Replace this with your code
-
-	//0
-	//| \
-	//?--?
-	//|  |
-	//?--?
-	//| /
-	//n0
-
-	
-	for (int i = 0; i < a_nSubdivisions; i++) //Horizontal Subdivisions
-	{
-		float angle1 = 2 * PI * (i / (float)a_nSubdivisions);
-		float angle2 = 2 * PI * ((i + 1) / (float)a_nSubdivisions);
-
-		for (int j = 0; j < a_nSubdivisions; j++) //Vertical Subdivisions
-		{
-			float fY1 = a_fRadius - (j / (float)a_nSubdivisions) * a_fRadius * 2;
-			float fY2 = a_fRadius - ((j + 1) / (float)a_nSubdivisions) * a_fRadius * 2;
-			
-			float fRadius1 = sqrt((a_fRadius * a_fRadius) - (fY1 * fY1));
-			float fRadius2 = sqrt((a_fRadius * a_fRadius) - (fY2 * fY2));
-
-			if (fY1 == a_fRadius)
-			{
-				//0
-				//| \
-				//1--2
-
-				vector3 point0(0.0f, a_fRadius, 0.0f); //0
-				vector3 point1(fRadius2 * cos(angle1), fY2, fRadius2 * sin(angle1)); //1
-				vector3 point2(fRadius2 * cos(angle2), fY2, fRadius2 * sin(angle2)); //2
-
-				AddTri(point0, point2, point1);
-			}
-			else if (fY2 == -a_fRadius)
-			{
-				//0--1
-				//| /
-				//2
-
-				vector3 point0(fRadius1 * cos(angle1), fY1, fRadius1 * sin(angle1)); //0
-				vector3 point1(fRadius1 * cos(angle2), fY1, fRadius1 * sin(angle2)); //1
-				vector3 point2(0.0f, -a_fRadius, 0.0f); //2
-				
-				AddTri(point0, point1, point2);
-			}
-			else
-			{
-				//0--1
-				//|  |
-				//2--3
-
-				vector3 point0(fRadius1 * cos(angle1), fY1, fRadius1 * sin(angle1));
-				vector3 point1(fRadius1 * cos(angle2), fY1, fRadius1 * sin(angle2));
-				vector3 point2(fRadius2 * cos(angle1), fY2, fRadius2 * sin(angle1));
-				vector3 point3(fRadius2 * cos(angle2), fY2, fRadius2 * sin(angle2));
-
-				AddQuad(point0, point1, point2, point3);
-			}
-			
-
-			
-		}
-	}
-
+	Mesh* pMesh = new Mesh();
+	pMesh->GenerateSphere(a_fRadius, a_nSubdivisions, a_v3Color);
+	m_lVertexPos = pMesh->GetVertexList();
+	m_uVertexCount = m_lVertexPos.size();
+	SafeDelete(pMesh);
 	// -------------------------------
 
 	// Adding information about color
