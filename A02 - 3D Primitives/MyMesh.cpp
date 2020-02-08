@@ -98,7 +98,7 @@ void MyMesh::CompileOpenGL3X(void)
 		//Color
 		m_lVertex.push_back(m_lVertexCol[i]);
 	}
-	glGenVertexArrays(1, &m_VAO);//Generate vertex array object
+	glGenVertexArrays(1, &m_VAO);//Generate Vertex Array Object
 	glGenBuffers(1, &m_VBO);//Generate Vertex Buffered Object
 
 	glBindVertexArray(m_VAO);//Bind the VAO
