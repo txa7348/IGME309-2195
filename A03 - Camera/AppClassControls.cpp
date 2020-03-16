@@ -1,4 +1,4 @@
-#include "AppClass.h"
+ #include "AppClass.h"
 using namespace Simplex;
 //Mouse
 void Application::ProcessMouseMovement(sf::Event a_event)
@@ -63,6 +63,9 @@ void Application::ProcessMouseScroll(sf::Event a_event)
 
 	if (fMultiplier)
 		fSpeed *= 2.0f;
+
+	//Moves camera forward or backward by scrolling
+	m_pCamera->MoveForward(fSpeed);
 }
 //Keyboard
 void Application::ProcessKeyPressed(sf::Event a_event)
@@ -347,6 +350,15 @@ void Application::CameraRotation(float a_fSpeed)
 	float fAngleX = 0.0f;
 	float fAngleY = 0.0f;
 	float fDeltaMouse = 0.0f;
+
+	//Axis:
+	//	   0
+	//	   |
+	//0----+----W
+	//	   |
+	//	   H
+
+
 	if (MouseX < CenterX)
 	{
 		fDeltaMouse = static_cast<float>(CenterX - MouseX);
@@ -357,7 +369,7 @@ void Application::CameraRotation(float a_fSpeed)
 		fDeltaMouse = static_cast<float>(MouseX - CenterX);
 		fAngleY -= fDeltaMouse * a_fSpeed;
 	}
-
+	
 	if (MouseY < CenterY)
 	{
 		fDeltaMouse = static_cast<float>(CenterY - MouseY);
@@ -368,6 +380,26 @@ void Application::CameraRotation(float a_fSpeed)
 		fDeltaMouse = static_cast<float>(MouseY - CenterY);
 		fAngleX += fDeltaMouse * a_fSpeed;
 	}
+
+	//Get Camera's direction vectors
+	vector3 v3Forward = m_pCamera->GetTarget() - m_pCamera->GetPosition();
+	vector3 v3Up = m_pCamera->GetAbove() - m_pCamera->GetPosition();
+	vector3 v3Right = glm::cross(v3Forward, v3Up);
+
+	v3Forward = glm::rotate(v3Forward, fAngleY, v3Up); //Rotates forward vector horizontally
+
+	fAngleX *= -1; //Adjust for Y starting at the top of the screen
+
+	//Prevents Camera from looking straight up or down
+	if (!(glm::normalizeDot(v3Forward, v3Up) > 0.99f && fAngleX > 0) && 
+		!(glm::normalizeDot(v3Forward, v3Up) < -0.99f && fAngleX < 0))
+	{
+		v3Forward = glm::rotate(v3Forward, fAngleX, v3Right); //Rotates forward vector vertically
+	}
+
+	//Set camera's forward vector
+	m_pCamera->SetTarget(v3Forward + m_pCamera->GetPosition());
+
 	//Change the Yaw and the Pitch of the camera
 	SetCursorPos(CenterX, CenterY);//Position the mouse in the center
 }
@@ -379,17 +411,42 @@ void Application::ProcessKeyboard(void)
 	for discreet on/off use ProcessKeyboardPressed/Released
 	*/
 #pragma region Camera Position
-	float fSpeed = 0.1f;
+	float fSpeed = 0.2f;
 	float fMultiplier = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) ||
 		sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
 
 	if (fMultiplier)
-		fSpeed *= 5.0f;
+		fSpeed *= 3.0f;
 
+	//Foward Movement
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+	{
 		m_pCamera->MoveForward(fSpeed);
+	}	
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+	{
 		m_pCamera->MoveForward(-fSpeed);
+	}
+
+	//Vertical Movement
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+	{
+		m_pCamera->MoveVertical(fSpeed);
+	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+	{
+		m_pCamera->MoveVertical(-fSpeed);
+	}
+
+	//Horizontal Movement
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+	{
+		m_pCamera->MoveSideways(fSpeed);
+	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+	{
+		m_pCamera->MoveSideways(-fSpeed);
+	}
 #pragma endregion
 }
 //Joystick

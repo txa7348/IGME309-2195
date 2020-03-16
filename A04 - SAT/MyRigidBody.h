@@ -15,7 +15,7 @@ class MyRigidBody
 {
 	MeshManager* m_pMeshMngr = nullptr; //for displaying the Rigid Body
 
-	bool m_bVisibleBS = false; //Visibility of bounding sphere
+	bool m_bVisibleBS = true; //Visibility of bounding sphere
 	bool m_bVisibleOBB = true; //Visibility of Oriented bounding box
 	bool m_bVisibleARBB = true; //Visibility of axis (Re)aligned bounding box
 
@@ -32,7 +32,7 @@ class MyRigidBody
 	vector3 m_v3MaxG = ZERO_V3; //maximum coordinate in global space (for ARBB)
 
 	vector3 m_v3HalfWidth = ZERO_V3; //half the size of the Oriented Bounding Box
-	vector3 m_v3ARBBSize = ZERO_V3;// size of the Axis (Re)Alligned Bounding Box
+	vector3 m_v3ARBBSize = ZERO_V3;// size of the Axis (Re)Aligned Bounding Box
 
 	matrix4 m_m4ToWorld = IDENTITY_M4; //Matrix that will take us from local to world coordinate
 

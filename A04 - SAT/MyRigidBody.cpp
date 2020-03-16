@@ -228,12 +228,17 @@ bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 {
 	//check if spheres are colliding as pre-test
 	bool bColliding = (glm::distance(GetCenterGlobal(), a_pOther->GetCenterGlobal()) < m_fRadius + a_pOther->m_fRadius);
-	
+
+	vector3 m4Plane;
+
 	//if they are colliding check the SAT
 	if (bColliding)
 	{
-		if(SAT(a_pOther) != eSATResults::SAT_NONE)
+		if (SAT(a_pOther) != eSATResults::SAT_NONE)
+		{
 			bColliding = false;// reset to false
+		}
+
 	}
 
 	if (bColliding) //they are colliding
@@ -286,6 +291,164 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	Simplex that might help you [eSATResults] feel free to use it.
 	(eSATResults::SAT_NONE has a value of 0)
 	*/
+
+	//Rotation matrix expressing B in A's coordinate frame
+	matrix3 R, AbsR;
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			R[i][j] = glm::dot(m_m4ToWorld[i], a_pOther->GetModelMatrix()[j]);
+
+	//Used to counteract arithmetic errors when two edges are parallel
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			AbsR[i][j] = abs(R[i][j]) + FLT_EPSILON;
+
+	//Translation vector from B to A
+	vector3 t = a_pOther->GetCenterGlobal() - GetCenterGlobal();
+
+	//Bring translation into a's coordinate frame
+	t = vector3(glm::dot(t, vector3(m_m4ToWorld[0])), 
+		glm::dot(t, vector3(m_m4ToWorld[1])), 
+		glm::dot(t, vector3(m_m4ToWorld[2])));
+
+	//|T Dot L| > rA + rB
+
+	//AX
+	if (abs(t[0]) >	//|T Dot L|
+		m_v3HalfWidth[0] + //rA
+		a_pOther->GetHalfWidth()[0] * AbsR[0][0] + //rB
+		a_pOther->GetHalfWidth()[1] * AbsR[0][1] +
+		a_pOther->GetHalfWidth()[2] * AbsR[0][2])
+	{
+		return eSATResults::SAT_AX;
+	}
+	//AY
+	if (abs(t[1]) > //|T Dot L|
+		m_v3HalfWidth[1] + //rA
+		a_pOther->GetHalfWidth()[0] * AbsR[1][0] + //rB
+		a_pOther->GetHalfWidth()[1] * AbsR[1][1] +
+		a_pOther->GetHalfWidth()[2] * AbsR[1][2])
+	{
+		return eSATResults::SAT_AY;
+	}
+	//AZ
+	if (abs(t[2]) > //|T Dot L|
+		m_v3HalfWidth[2] + //rA
+		a_pOther->GetHalfWidth()[0] * AbsR[2][0] + //rB
+		a_pOther->GetHalfWidth()[1] * AbsR[2][1] +
+		a_pOther->GetHalfWidth()[2] * AbsR[2][2])
+	{
+		return eSATResults::SAT_AZ;
+	}
+	//BX
+	if (abs(t[0] * R[0][0] + t[1] * R[1][0] + t[2] * R[2][0]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[0][0] + //rA
+		m_v3HalfWidth[1] * AbsR[1][0] +
+		m_v3HalfWidth[2] * AbsR[2][0] + 
+		a_pOther->GetHalfWidth()[0]) //rB
+	{
+		return eSATResults::SAT_BX;
+	}
+	//BY
+	if (abs(t[0] * R[0][1] + t[1] * R[1][1] + t[2] * R[2][1]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[0][1] + //rA
+		m_v3HalfWidth[1] * AbsR[1][1] +
+		m_v3HalfWidth[2] * AbsR[2][1] +
+		a_pOther->GetHalfWidth()[1]) //rB
+	{
+		return eSATResults::SAT_BY;
+	}
+	//BZ
+	if (abs(t[0] * R[0][2] + t[1] * R[1][2] + t[2] * R[2][2]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[0][2] + //rA
+		m_v3HalfWidth[1] * AbsR[1][2] +
+		m_v3HalfWidth[2] * AbsR[2][2] +
+		a_pOther->GetHalfWidth()[2]) //rB
+	{
+		return eSATResults::SAT_BZ;
+	}
+	//AX x BX
+	if (abs(t[2] * R[1][0] - t[1] * R[2][0]) > //|T Dot L|
+		m_v3HalfWidth[1] * AbsR[2][0] + //rA
+		m_v3HalfWidth[2] * AbsR[1][0] +
+		a_pOther->GetHalfWidth()[1] * AbsR[0][2] + //rB
+		a_pOther->GetHalfWidth()[2] * AbsR[0][1])
+	{
+		return eSATResults::SAT_AXxBX;
+	}
+	//AX x BY
+	if (abs(t[2] * R[1][1] - t[1] * R[2][1]) > //|T Dot L|
+		m_v3HalfWidth[1] * AbsR[2][1] + //rA
+		m_v3HalfWidth[2] * AbsR[1][1] +
+		a_pOther->GetHalfWidth()[0] * AbsR[0][2] + //rB
+		a_pOther->GetHalfWidth()[2] * AbsR[0][0])
+	{
+		return eSATResults::SAT_AXxBY;
+	}
+	//AX x BZ
+	if (abs(t[2] * R[1][2] - t[1] * R[2][2]) > //|T Dot L|
+		m_v3HalfWidth[1] * AbsR[2][2] + //rA
+		m_v3HalfWidth[2] * AbsR[1][2] +
+		a_pOther->GetHalfWidth()[0] * AbsR[0][1] + //rB
+		a_pOther->GetHalfWidth()[1] * AbsR[0][0])
+	{
+		return eSATResults::SAT_AXxBZ;
+	}
+	//AY x BX
+	if (abs(t[0] * R[2][0] - t[2] * R[0][0]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[2][0] + //rA
+		m_v3HalfWidth[2] * AbsR[0][0] +
+		a_pOther->GetHalfWidth()[1] * AbsR[1][2] + //rB
+		a_pOther->GetHalfWidth()[2] * AbsR[1][1])
+	{
+		return eSATResults::SAT_AYxBX;
+	}
+	//AY x BY
+	if (abs(t[0] * R[2][1] - t[2] * R[0][1]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[2][1] + //rA
+		m_v3HalfWidth[2] * AbsR[0][1] +
+		a_pOther->GetHalfWidth()[0] * AbsR[1][2] +//rB
+		a_pOther->GetHalfWidth()[2] * AbsR[1][0])
+	{
+		return eSATResults::SAT_AYxBY;
+	}
+	//AY x BZ
+	if (abs(t[0] * R[2][2] - t[2] * R[0][2]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[2][2] + //rA
+		m_v3HalfWidth[2] * AbsR[0][2] +
+		a_pOther->GetHalfWidth()[0] * AbsR[1][1] + //rB
+		a_pOther->GetHalfWidth()[1] * AbsR[1][0])
+	{
+		return eSATResults::SAT_AYxBZ;
+	}
+	//AZ x BX
+	if (abs(t[1] * R[0][0] - t[0] * R[1][0]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[1][0] + //rA
+		m_v3HalfWidth[1] * AbsR[0][0] +
+		a_pOther->GetHalfWidth()[1] * AbsR[2][2] + //rB
+		a_pOther->GetHalfWidth()[2] * AbsR[2][1])
+	{
+		return eSATResults::SAT_AZxBX;
+	}
+	//AZ x BY
+	if (abs(t[1] * R[0][1] - t[0] * R[1][1]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[1][1] + //rA
+		m_v3HalfWidth[1] * AbsR[0][1] +
+		a_pOther->GetHalfWidth()[0] * AbsR[2][2] + //rB
+		a_pOther->GetHalfWidth()[2] * AbsR[2][0])
+	{
+		return eSATResults::SAT_AZxBY;
+	}
+	//AZ x BZ
+	if (abs(t[1] * R[0][2] - t[0] * R[1][2]) > //|T Dot L|
+		m_v3HalfWidth[0] * AbsR[1][2] + //rA
+		m_v3HalfWidth[1] * AbsR[0][2] +
+		a_pOther->GetHalfWidth()[0] * AbsR[2][1] + //rB
+		a_pOther->GetHalfWidth()[1] * AbsR[2][0])
+	{
+		return eSATResults::SAT_AZxBZ;
+	}
+	
 
 	//there is no axis test that separates this two objects
 	return eSATResults::SAT_NONE;
