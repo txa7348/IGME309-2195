@@ -46,7 +46,11 @@ Simplex::MyOctant::MyOctant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 	lMinMax.clear();
 	SafeDelete(pRigidBody);
 
-	m_
+	m_fSize = fMax * 2.0f;
+	m_v3Center = v3Center;
+	m_v3Min = m_v3Center - vector3(fMax);
+	m_v3Max = m_v3Center + vector3(fMax);
+
 	m_uOctantCount++;
 
 	ConstructTree(m_uMaxLevel);
