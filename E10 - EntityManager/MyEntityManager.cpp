@@ -68,22 +68,49 @@ void Simplex::MyEntityManager::Update(void)
 }
 void Simplex::MyEntityManager::AddEntity(String a_sFileName, String a_sUniqueID)
 {
-
+	m_entityList.push_back(new MyEntity(a_sFileName, a_sUniqueID)); //Adds new Entity to list
+	m_uEntityCount++; //Updates Entity count
 }
 void Simplex::MyEntityManager::RemoveEntity(uint a_uIndex)
 {
-
+	if (a_uIndex >= 0 && a_uIndex < m_uEntityCount) //Ensures valid index
+	{
+		m_entityList.erase(m_entityList.begin() + a_uIndex); //Deletes Entity at specified index
+		m_uEntityCount--;
+	}
 }
 void Simplex::MyEntityManager::RemoveEntity(String a_sUniqueID)
 {
+	int index = -1;
 
+	for (int i = 0; i < m_uEntityCount; i++) //Checks for an Entity with the specified ID
+	{
+		if (m_entityList[i]->GetUniqueID() == a_sUniqueID)
+			index == i;
+	}
+
+	if (index >= 0 && index < m_uEntityCount) //Ensures valid index
+	{
+		m_entityList.erase(m_entityList.begin() + index); //Deletes Entity at specified index
+		m_uEntityCount--;
+	}
 }
 String Simplex::MyEntityManager::GetUniqueID(uint a_uIndex)
 {
+	if (a_uIndex >= 0 && a_uIndex < m_uEntityCount) //Checks for valid index
+	{
+		return m_entityList[a_uIndex]->GetUniqueID();
+	}
+
 	return "";
 }
 MyEntity* Simplex::MyEntityManager::GetEntity(uint a_uIndex)
 {
+	if (a_uIndex >= 0 && a_uIndex < m_uEntityCount) //Checks for valid index
+	{
+		return m_entityList[a_uIndex];
+	}
+
 	return nullptr;
 }
 void Simplex::MyEntityManager::AddEntityToRenderList(uint a_uIndex, bool a_bRigidBody)
